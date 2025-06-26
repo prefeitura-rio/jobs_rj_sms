@@ -1,0 +1,62 @@
+name: Deploy to Cloud Run Job
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build & Deploy Cloud Run Job
+    runs-on: ubuntu-latest
+
+    env:
+      PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      REGION: ${{ secrets.GCP_REGION }}
+      JOB_NAME: ${{ secrets.GCP_RUN_JOB_NAME }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_NAME=gcr.io/$PROJECT_ID/$JOB_NAME
+          docker build -t $IMAGE_NAME .
+          gcloud auth configure-docker --quiet
+          docker push $IMAGE_NAME
+
+      - name: Deploy Cloud Run Job
+        run: |
+          IMAGE_NAME=gcr.io/$PROJECT_ID/$JOB_NAME
+          gcloud run jobs deploy $JOB_NAME \
+            --image=$IMAGE_NAME \
+            --region=$REGION \
+            --set-env-vars="INFISICAL_TOKEN=${{ secrets.INFISICAL_TOKEN }},INFISICAL_ADDRESS=${{ secrets.INFISICAL_ADDRESS }},ENVIRONMENT=prod" \
+            --command="python" \
+            --args="entrypoint.py" \
+            --max-retries=1 \
+            --memory=512Mi \
+            --cpu=1 \
+            --timeout=900
+
+      - name: Schedule job via Cloud Scheduler
+        run: |
+          gcloud scheduler jobs create http $JOB_NAME-schedule \
+            --schedule="${{ secrets.GCP_SCHEDULER_SCHEDULE }}" \
+            --uri="https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/$PROJECT_ID/jobs/$JOB_NAME:run" \
+            --http-method=POST \
+            --oauth-service-account-email=$(gcloud config get-value account) \
+            --headers="Content-Type=application/json" \
+            --message-body="{}" \
+            --location=$REGION || echo "Scheduler may already exist"

@@ -1,0 +1,3 @@
+pandas
+firebirdsql~=0.0
+fastapi[all]==0.83.0  # Última com suporte para Python 3.6

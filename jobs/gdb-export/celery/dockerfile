@@ -1,0 +1,12 @@
+FROM python:3.10-slim
+
+WORKDIR /tasks
+
+# Trazemos pyproject primeiro pra que o pip install fique no cache
+# e não seja reexecutado a cada modificação dos .py
+COPY ./src/pyproject.toml /tasks/pyproject.toml
+RUN pip install poetry==1.7.1 && poetry install --no-root
+
+COPY ./src /tasks
+
+CMD ["poetry", "run", "celery", "-A", "main", "worker", "--loglevel=info", "--concurrency=1"]

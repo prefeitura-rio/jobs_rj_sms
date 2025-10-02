@@ -1,0 +1,16 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Trazemos pyproject primeiro pra que o pip install fique no cache
+# e não seja reexecutado a cada modificação dos .py
+COPY ./src/pyproject.toml /app/pyproject.toml
+RUN pip install poetry==1.7.1 && poetry install --no-root
+
+COPY ./src /app
+
+EXPOSE 5000
+# Por algum motivo `uvicorn` não fica disponível no shell por si só
+# Acho que precisaria rodar `poetry shell` mas isso dá erro porque
+# o shell do docker não é interativo..... assim funciona então ta bom
+CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]

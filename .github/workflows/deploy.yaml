@@ -1,9 +1,12 @@
 name: Deploy All Cloud Run Jobs
 
-on:
-  push:
-    branches:
-      - main
+# FIXME: O job de deploy precisa ser modificado, porque estamos
+# usando Docker Compose agora
+
+# on:
+#   push:
+#     branches:
+#       - main
 
 jobs:
   deploy-all:

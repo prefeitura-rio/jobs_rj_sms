@@ -7,10 +7,12 @@ services:
     image: redis
     networks:
       - gdb-export--network
+    profiles:
+      - gdb-export
 
   gdb-export--gdb2csv:
     build:
-      context: jobs/gdb-export/gdb2csv
+      context: jobs/gdb2csv
       dockerfile: dockerfile
     restart: unless-stopped
     volumes:
@@ -22,7 +24,7 @@ services:
 
   gdb-export--fastapi:
     build:
-      context: jobs/gdb-export/api
+      context: jobs/api
       dockerfile: dockerfile
     environment:
       REDIS_SERVER: redis://gdb-export--redis:6379
@@ -41,7 +43,7 @@ services:
 
   gdb-export--celery_worker:
     build:
-      context: jobs/gdb-export/celery
+      context: jobs/celery
       dockerfile: dockerfile
     environment:
       REDIS_SERVER: redis://gdb-export--redis:6379

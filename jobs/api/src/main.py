@@ -53,6 +53,8 @@ async def list_files():
 
 
 class ExportRequest(BaseModel):
+	username: str
+	password: str
 	gcs_uri: str
 
 @app.post("/export/")
@@ -60,7 +62,11 @@ async def request_export(
 	req: ExportRequest
 ):
 	try:
-		task = celery_app.send_task("export.task", args=[req.gcs_uri])
+		task = celery_app.send_task("export.task", args=[
+			req.username,
+			req.password,
+			req.gcs_uri
+		])
 	except Exception as e:
 		return { "success": False, "error": repr(e) }
 	return { "success": True, "id": task.id }

@@ -46,11 +46,14 @@ services:
       context: jobs/celery
       dockerfile: dockerfile
     environment:
+      ENVIRONMENT: dev
       REDIS_SERVER: redis://gdb-export--redis:6379
       EXPORT_SERVER: http://gdb-export--gdb2csv:3000
       C_FORCE_ROOT: "true"
       INFISICAL_ADDRESS: ${INFISICAL_ADDRESS}
       INFISICAL_TOKEN: ${INFISICAL_TOKEN}
+      GDB_EXPORT_USERNAME: abc
+      GDB_EXPORT_PASSWORD: ${GDB_EXPORT_PASSWORD}
     depends_on:
       - gdb-export--redis
     restart: unless-stopped

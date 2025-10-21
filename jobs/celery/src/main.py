@@ -3,23 +3,16 @@ import os
 import uuid
 import shutil
 import requests
-import traceback
-# from time import sleep
+
 from loguru import logger
-from celery import Celery, Task, states
-from passlib.context import CryptContext
+from celery import Celery, Task
 
 import auth  # ./auth.py
 import utils  # ./utils.py
 
 
-auth.inject_environment_variables(environment=os.environ.get("ENVIRONMENT", "dev")) # FIXME
+auth.inject_environment_variables(environment=os.environ.get("ENVIRONMENT", "dev"))
 auth.prepare_gcp_credentials()
-
-USERNAME = auth.getenv_or_action("GDB_EXPORT_USERNAME", action="raise")
-PASSWORD = auth.getenv_or_action("GDB_EXPORT_PW_HASH", action="raise")
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 celery_app = Celery(
 	"celery",
@@ -36,15 +29,9 @@ def dummy_task(self: Task):
 
 
 @celery_app.task(name="export.task", bind=True)
-def export_task(self: Task, username: str, password: str, gcs_uri: str):
+def export_task(self: Task, gcs_uri: str):
 	if not gcs_uri.startswith("gs://"):
 		state = f"Malformed bucket URI: '{gcs_uri}'"
-		logger.warning(state)
-		raise utils.TaskFailure(state)
-
-	correct_password = pwd_context.verify(password, PASSWORD)
-	if username != USERNAME or not correct_password:
-		state = "Invalid username/password combination"
 		logger.warning(state)
 		raise utils.TaskFailure(state)
 

@@ -17,7 +17,7 @@ auth.inject_environment_variables(environment=os.environ.get("ENVIRONMENT", "dev
 auth.prepare_gcp_credentials()
 
 USERNAME = auth.getenv_or_action("GDB_EXPORT_USERNAME", action="raise")
-PASSWORD = auth.getenv_or_action("GDB_EXPORT_PASSWORD", action="raise")
+PASSWORD = auth.getenv_or_action("GDB_EXPORT_PW_HASH", action="raise")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -39,16 +39,14 @@ def dummy_task(self: Task):
 def export_task(self: Task, username: str, password: str, gcs_uri: str):
 	if not gcs_uri.startswith("gs://"):
 		state = f"Malformed bucket URI: '{gcs_uri}'"
-		self.update_state(state=states.FAILURE, meta={ "status": state })
 		logger.warning(state)
-		return
+		raise utils.TaskFailure(state)
 
 	correct_password = pwd_context.verify(password, PASSWORD)
 	if username != USERNAME or not correct_password:
 		state = "Invalid username/password combination"
-		self.update_state(state=states.FAILURE, meta={ "status": state })
 		logger.warning(state)
-		return
+		raise utils.TaskFailure(state)
 
 	TOTAL_TASKS = 6
 	FILE_UUID = (
@@ -147,12 +145,4 @@ def export_task(self: Task, username: str, password: str, gcs_uri: str):
 		return { "success": True, "output": output_uri }
 
 	except Exception as ex:
-		self.update_state(
-			state=states.FAILURE,
-			meta={
-				"exc_type": type(ex).__name__,
-				"exc_message": traceback.format_exc().split("\n"),
-			},
-		)
-
-		raise ex
+		raise utils.TaskFailure(str(ex))

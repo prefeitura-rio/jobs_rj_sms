@@ -52,11 +52,13 @@ services:
       C_FORCE_ROOT: "true"
       INFISICAL_ADDRESS: ${INFISICAL_ADDRESS}
       INFISICAL_TOKEN: ${INFISICAL_TOKEN}
-      GDB_EXPORT_USERNAME: abc
-      GDB_EXPORT_PASSWORD: ${GDB_EXPORT_PASSWORD}
+      GDB_EXPORT_USERNAME: ${GDB_EXPORT_USERNAME}
+      GDB_EXPORT_PW_HASH: ${GDB_EXPORT_PW_HASH}
     depends_on:
       - gdb-export--redis
-    restart: unless-stopped
+    # Em caso de erro, tenta reiniciar até 5x; isso evita
+    # restarts infinitos em caso de credenciais faltantes
+    restart: on-failure:5
     volumes:
       - gdb-export--volume:/data:rw
     networks:

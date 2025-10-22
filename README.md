@@ -6,16 +6,25 @@
 
 ### Uso
 ```sh
-$ docker compose --profile gdb-export build
-$ docker compose --profile gdb-export up
+$ docker compose --profile gdb-export-prod build
+$ docker compose --profile gdb-export-prod up
 ```
 
 Esse comando sobe um gerenciador do Celery em :5555 e um FastAPI em :5000.
 
+Antes de qualquer coisa, é necessário se autenticar usando o endpoint `/token`, passando como corpo os campos de `username` e `password`:
+
+```sh
+$ curl -id 'username=abcd&password=wxyz' http://localhost:5000/token
+# => {"status":"SUCCESS","access_token":"xxxx.xxxx.xxxx","token_type":"Bearer","expires_in":1800}
+```
+
+Entre em contato com o administrador para obter as credenciais necessárias. Quaisquer requisições a outros endpoints requerem um cabeçalho `Authorization: Bearer <token>`, onde token é o valor de `access_token` recebido acima.
+
 Para requisitar a exportação de um GDB para um .ZIP de CSVs, faça POST ao endpoint `/export/` passando o URI do arquivo, em um bucket do GCS, como parâmetro `gcs_uri`. Por exemplo:
 
 ```sh
-$ curl -d '{ "gcs_uri": "gs://bucket/path/to/your/file/BACKUP.GDB" }' -H "Content-Type: application/json" http://your_api_domain/export/
+$ curl -H "Authorization: Bearer ..." -d '{ "gcs_uri": "gs://bucket/path/to/your/file/BACKUP.GDB" }' -H "Content-Type: application/json" http://your_api_domain/export/
 #=> {"success":true,"id":"0f26ade5-ecc7-4f75-a034-545506c34a9b"}
 ```
 
@@ -25,7 +34,7 @@ $ curl -d '{ "gcs_uri": "gs://bucket/path/to/your/file/BACKUP.GDB" }' -H "Conten
 Você pode, então, usar esse ID retornado para verificar o status, através de um GET para `/check/{id}`:
 
 ```sh
-$ curl http://your_api_domain/check/0f26ade5-ecc7-4f75-a034-545506c34a9b
+$ curl -H "Authorization: Bearer ..." http://your_api_domain/check/0f26ade5-ecc7-4f75-a034-545506c34a9b
 #=> {"status":"PROGRESS","result":{"status":"Requesting export of file '0f26ade5-ecc7-4f75-a034-545506c34a9b.gdb'...","current":2,"total":6},"task_id":"0f26ade5-ecc7-4f75-a034-545506c34a9b"}
 ```
 
@@ -76,7 +85,7 @@ Outros endpoints potencialmente úteis:
 Como eu tenho desenvolvido:
 
 ```sh
-$ docker compose --profile gdb-export build
+$ docker compose --profile gdb-export-dev build
 $ docker compose up gdb-export--redis gdb-export--flower
 # Em outros terminais separados, para poder
 # interromper execução e/ou fazer modificações:
@@ -90,7 +99,6 @@ Você pode executar `poetry shell && poetry install --no-root` dentro da pasta `
 
 **TODO**:
 - Permitir parâmetros de nomes de tabelas desejadas, charset, etc
-- [gdb2csv] `exit(1)` se não conseguir conectar com o banco
 - Forma de cancelar exportações correntes (considerando que pode haver uma fila de exportações seguintes aguardando)
 
 ---

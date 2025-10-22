@@ -3,16 +3,15 @@ import os
 import uuid
 import shutil
 import requests
-import traceback
-# from time import sleep
+
 from loguru import logger
-from celery import Celery, Task, states
+from celery import Celery, Task
 
 import auth  # ./auth.py
 import utils  # ./utils.py
 
 
-auth.inject_environment_variables(environment="dev") # FIXME
+auth.inject_environment_variables(environment=os.environ.get("ENVIRONMENT", "dev"))
 auth.prepare_gcp_credentials()
 
 celery_app = Celery(
@@ -33,9 +32,8 @@ def dummy_task(self: Task):
 def export_task(self: Task, gcs_uri: str):
 	if not gcs_uri.startswith("gs://"):
 		state = f"Malformed bucket URI: '{gcs_uri}'"
-		self.update_state(state=states.FAILURE, meta={ "status": state })
 		logger.warning(state)
-		return
+		raise utils.TaskFailure(state)
 
 	TOTAL_TASKS = 6
 	FILE_UUID = (
@@ -134,12 +132,4 @@ def export_task(self: Task, gcs_uri: str):
 		return { "success": True, "output": output_uri }
 
 	except Exception as ex:
-		self.update_state(
-			state=states.FAILURE,
-			meta={
-				"exc_type": type(ex).__name__,
-				"exc_message": traceback.format_exc().split("\n"),
-			},
-		)
-
-		raise ex
+		raise utils.TaskFailure(str(ex))

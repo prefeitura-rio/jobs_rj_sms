@@ -25,7 +25,7 @@ def get_connection(db_path, user="SYSDBA", password="masterkey", charset="WIN125
 		# If we've tried too many times, then give up :\
 		if attempt > MAX_ATTEMPTS:
 			log("Conection to Firebird failed :(")
-			raise("Conection to Firebird failed :(")
+			exit(1)
 		# Make sure Firebird is running. This command might be run multiple times
 		# but it doesn't error out, so it's fine
 		subprocess.call(["/etc/init.d/firebird", "start"])
@@ -79,7 +79,7 @@ def execute_query(con, query):
 		log(repr(e))
 		cur.close()
 		con.close()
-		raise e
+		exit(1)
 
 
 def export_table_to_csv(con, table_name):
@@ -104,7 +104,7 @@ SELECT * FROM {table_name}
 		log(f"Unexpected Exception!")
 		log(repr(e))
 		con.close()
-		raise e
+		exit(1)
 
 
 def export_table_to_csv_chunked(con, table_name, chunk_size, cont=0):
@@ -175,7 +175,7 @@ ORDER BY RDB$DB_KEY
 			log(f"Unexpected Exception!")
 			log(repr(e))
 			con.close()
-			raise e
+			exit(1)
 
 
 ################################################################################

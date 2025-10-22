@@ -10,6 +10,12 @@ celery = "5.5.3"
 redis = "^4"
 fastapi = "0.109.2"
 uvicorn = {version = ">=0.24.0.post1,<0.25", extras = ["standard"]}
+python-multipart = "0.0.7"
+infisical = "1.5.0"
+loguru = ">=0.7.0,<0.8"
+bcrypt = "<4.1"
+passlib = {version = ">=1.7.4,<2", extras = ["bcrypt"]}
+pyjwt = ">=2.8.0,<3"
 
 
 [build-system]

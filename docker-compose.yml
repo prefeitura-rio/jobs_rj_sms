@@ -8,7 +8,8 @@ services:
     networks:
       - gdb-export--network
     profiles:
-      - gdb-export
+      - gdb-export-prod
+      - gdb-export-dev
 
   gdb-export--gdb2csv:
     build:
@@ -20,7 +21,8 @@ services:
     networks:
       - gdb-export--network
     profiles:
-      - gdb-export
+      - gdb-export-prod
+      - gdb-export-dev
 
   gdb-export--fastapi:
     build:
@@ -43,7 +45,8 @@ services:
     networks:
       - gdb-export--network
     profiles:
-      - gdb-export
+      - gdb-export-prod
+      - gdb-export-dev
 
   gdb-export--celery_worker:
     build:
@@ -66,7 +69,8 @@ services:
     networks:
       - gdb-export--network
     profiles:
-      - gdb-export
+      - gdb-export-prod
+      - gdb-export-dev
 
   gdb-export--flower:
     image: mher/flower
@@ -79,7 +83,7 @@ services:
     networks:
       - gdb-export--network
     profiles:
-      - gdb-export
+      - gdb-export-dev
 
   ###################################
 

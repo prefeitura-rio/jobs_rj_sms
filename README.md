@@ -6,8 +6,8 @@
 
 ### Uso
 ```sh
-$ docker compose --profile gdb-export build
-$ docker compose --profile gdb-export up
+$ docker compose --profile gdb-export-prod build
+$ docker compose --profile gdb-export-prod up
 ```
 
 Esse comando sobe um gerenciador do Celery em :5555 e um FastAPI em :5000.
@@ -85,7 +85,7 @@ Outros endpoints potencialmente úteis:
 Como eu tenho desenvolvido:
 
 ```sh
-$ docker compose --profile gdb-export build
+$ docker compose --profile gdb-export-dev build
 $ docker compose up gdb-export--redis gdb-export--flower
 # Em outros terminais separados, para poder
 # interromper execução e/ou fazer modificações:

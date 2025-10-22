@@ -36,17 +36,17 @@ def decode_token(jwt_string: str) -> dict:
 			leeway=30,
 		)
 	except jwt.ExpiredSignatureError:
-		msg = "Token expirado"
+		msg = "Expired token"
 		logger.error(msg)
 		raise HTTPException(
-			status_code=status.HTTP_401_UNAUTHORIZED.value,
+			status_code=status.HTTP_401_UNAUTHORIZED,
 			detail=msg
 		)
 	except jwt.InvalidTokenError as e:
-		msg = f"Token inválido: {str(e)}"
+		msg = f"Invalid token: '{str(e)}'"
 		logger.error(msg)
 		raise HTTPException(
-			status_code=status.HTTP_401_UNAUTHORIZED.value,
+			status_code=status.HTTP_401_UNAUTHORIZED,
 			detail=msg
 		)
 

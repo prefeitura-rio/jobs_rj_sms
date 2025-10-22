@@ -79,6 +79,11 @@ async def authenticate(
 
 @app.get("/list/")
 async def list_files(token: Annotated[str, Depends(oauth2_scheme)]):
+	# Decodifica token; como não estamos usando contas individuais,
+	# é suficiente só conferir se não vai dar algum erro
+	payload = auth.decode_token(token)
+	logger.debug(payload)
+
 	out = dict()
 	for root, _, files in os.walk("/data"):
 		out[root] = [
@@ -95,6 +100,9 @@ async def list_files(token: Annotated[str, Depends(oauth2_scheme)]):
 
 @app.get("/clear/")
 async def list_files(token: Annotated[str, Depends(oauth2_scheme)]):
+	payload = auth.decode_token(token)
+	logger.debug(payload)
+
 	PATH = "/data"
 	for item in os.listdir(PATH):
 		item_path = os.path.join(PATH, item)
@@ -113,6 +121,9 @@ async def request_export(
 	token: Annotated[str, Depends(oauth2_scheme)],
 	req: ExportRequest,
 ):
+	payload = auth.decode_token(token)
+	logger.debug(payload)
+
 	try:
 		task = celery_app.send_task("export.task", args=[req.gcs_uri])
 	except Exception as e:
@@ -124,6 +135,9 @@ async def request_export(
 def dummy_task(
 	token: Annotated[str, Depends(oauth2_scheme)],
 ):
+	payload = auth.decode_token(token)
+	logger.debug(payload)
+
 	try:
 		task = celery_app.send_task("dummy.task")
 	except Exception as e:
@@ -136,6 +150,9 @@ def check_task(
 	token: Annotated[str, Depends(oauth2_scheme)],
 	id: str,
 ):
+	payload = auth.decode_token(token)
+	logger.debug(payload)
+
 	task = celery_app.AsyncResult(id)
 	if task.state == "SUCCESS":
 		response = {

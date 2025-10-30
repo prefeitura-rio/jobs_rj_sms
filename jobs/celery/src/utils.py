@@ -2,6 +2,8 @@ from google.cloud import storage
 from google.oauth2 import service_account
 from loguru import logger
 
+class TaskFailure(Exception):
+	pass
 
 def download_from_bucket(bucket_uri: str, file_uuid: str, from_file="/tmp/credentials.json"):
 	credentials = service_account.Credentials.from_service_account_file(

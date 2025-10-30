@@ -8,7 +8,8 @@ services:
     networks:
       - gdb-export--network
     profiles:
-      - gdb-export
+      - gdb-export-prod
+      - gdb-export-dev
 
   gdb-export--gdb2csv:
     build:
@@ -20,7 +21,8 @@ services:
     networks:
       - gdb-export--network
     profiles:
-      - gdb-export
+      - gdb-export-prod
+      - gdb-export-dev
 
   gdb-export--fastapi:
     build:
@@ -29,23 +31,29 @@ services:
     environment:
       REDIS_SERVER: redis://gdb-export--redis:6379
       C_FORCE_ROOT: "true"
+      INFISICAL_ADDRESS: ${INFISICAL_ADDRESS}
+      INFISICAL_TOKEN: ${INFISICAL_TOKEN}
+      GDB_EXPORT_USERNAME: ${GDB_EXPORT_USERNAME}
+      GDB_EXPORT_PW_HASH: ${GDB_EXPORT_PW_HASH}
     ports:
       - "5000:5000"
     depends_on:
       - gdb-export--redis
-    restart: unless-stopped
+    restart: on-failure:5
     volumes:
       - gdb-export--volume:/data:rw
     networks:
       - gdb-export--network
     profiles:
-      - gdb-export
+      - gdb-export-prod
+      - gdb-export-dev
 
   gdb-export--celery_worker:
     build:
       context: jobs/celery
       dockerfile: dockerfile
     environment:
+      ENVIRONMENT: dev
       REDIS_SERVER: redis://gdb-export--redis:6379
       EXPORT_SERVER: http://gdb-export--gdb2csv:3000
       C_FORCE_ROOT: "true"
@@ -53,13 +61,16 @@ services:
       INFISICAL_TOKEN: ${INFISICAL_TOKEN}
     depends_on:
       - gdb-export--redis
-    restart: unless-stopped
+    # Em caso de erro, tenta reiniciar até 5x; isso evita
+    # restarts infinitos em caso de credenciais faltantes
+    restart: on-failure:5
     volumes:
       - gdb-export--volume:/data:rw
     networks:
       - gdb-export--network
     profiles:
-      - gdb-export
+      - gdb-export-prod
+      - gdb-export-dev
 
   gdb-export--flower:
     image: mher/flower
@@ -68,11 +79,11 @@ services:
       - "5555:5555"
     depends_on:
       - gdb-export--redis
-    restart: unless-stopped
+    restart: on-failure:5
     networks:
       - gdb-export--network
     profiles:
-      - gdb-export
+      - gdb-export-dev
 
   ###################################
 

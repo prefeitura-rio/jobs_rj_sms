@@ -5,6 +5,7 @@ services:
   ###################################
   gdb-export--redis:
     image: redis
+    restart: unless-stopped
     networks:
       - gdb-export--network
     profiles:

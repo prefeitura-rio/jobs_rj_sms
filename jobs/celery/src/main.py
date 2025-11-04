@@ -78,7 +78,8 @@ def export_task(self: Task, gcs_uri: str):
 		})
 		logger.info(state)
 		EXPORT_SERVER = os.environ.get("EXPORT_SERVER")
-		requests.get(f"{EXPORT_SERVER}/export/{gdb_filename}")
+		resp = requests.get(f"{EXPORT_SERVER}/export/{gdb_filename}")
+		resp.raise_for_status()
 		logger.info(f"Found '{len(os.listdir(CSV_PATH))}' file(s) after export")
 
 

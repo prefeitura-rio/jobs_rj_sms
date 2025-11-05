@@ -74,6 +74,9 @@ def execute_query(con, query):
 		columns = [ desc[0] for desc in cur.description ]
 		return (rows, columns)
 
+	# Propagate error back to export_table.. function
+	except firebirdsql.OperationalError as e:
+		raise e
 	except Exception as e:
 		log(f"Unexpected Exception!")
 		log(repr(e))
@@ -117,6 +120,24 @@ def export_table_to_csv_chunked(con, table_name, chunk_size, cont=0):
 	while True:
 		try:
 			if first_write:
+				# Sometimes we get 'OperationalError("Can not recv() packets")'
+				# It seems as if that happens when the table has over ~45 columns
+				# So, here, we first check how many columns the table has
+				(rows, _) = execute_query(con, f"""
+SELECT RDB$FIELD_NAME
+FROM RDB$RELATION_FIELDS
+WHERE RDB$RELATION_NAME = '{table_name}'
+				""")
+				# `rows` is [  ( col name, ), ( col name, ), ...  ]
+				column_count = len(rows)
+				log(f"Table has {column_count} column(s): {rows}")
+
+				# If we're over the limit
+				if len(rows) > 45:
+					# TODO: split table in 2, export separately
+					log("Over 45; skipping table") # band-aid for now
+					return
+			
 				(rows, _) = execute_query(con, f"""
 SELECT COUNT(*) FROM {table_name}
 				""")

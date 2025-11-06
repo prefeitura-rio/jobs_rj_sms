@@ -98,10 +98,7 @@ def export_task(self: Task, gcs_uri: str):
 
 		########################################
 		# (4) Faz upload para o bucket
-		compressed_file_ext = "unknown"
-		if zip_filepath.endswith(".zip"):
-			compressed_file_ext = "zip"
-		# ...
+		compressed_file_ext = "zip"
 		state = f"Uploading as 'gs://{bucket_name}/{gcs_path}/{original_file_name}.{compressed_file_ext}'..."
 		self.update_state(state="PROGRESS", meta={
 			"status": state,

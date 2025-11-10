@@ -23,8 +23,10 @@ celery_app = Celery(
 #############################
 
 @celery_app.task(name="dummy.task", bind=True)
-def dummy_task(self: Task):
+def dummy_task(self: Task, fail: bool):
 	logger.info("Dummy!")
+	if fail:
+		raise Exception("Requested task failure")
 	return { "success": True }
 
 

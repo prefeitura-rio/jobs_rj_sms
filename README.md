@@ -102,7 +102,6 @@ Você pode executar `poetry shell && poetry install --no-root` dentro da pasta `
 **TODO**:
 - Permitir parâmetros de nomes de tabelas desejadas, charset, etc
 - Forma de cancelar exportações correntes (considerando que pode haver uma fila de exportações seguintes aguardando)
-- [HTTP/2?](https://http1mustdie.com/)
 
 ---
 

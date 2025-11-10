@@ -2,7 +2,7 @@
 import os
 import json
 import shutil
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -134,12 +134,13 @@ async def request_export(
 @app.get("/dummy/")
 def dummy_task(
 	token: Annotated[str, Depends(oauth2_scheme)],
+	fail: Optional[bool] = False
 ):
 	payload = auth.decode_token(token)
 	logger.debug(payload)
 
 	try:
-		task = celery_app.send_task("dummy.task")
+		task = celery_app.send_task("dummy.task", args=[bool(fail)])
 	except Exception as e:
 		return { "success": False, "error": repr(e) }
 	return { "success": True, "id": task.id }

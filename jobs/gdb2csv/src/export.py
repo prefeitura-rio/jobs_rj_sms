@@ -85,14 +85,8 @@ def execute_query(con, query):
 		return (rows, columns)
 
 	# Propagate error back to export_table.. function
-	except firebirdsql.OperationalError as e:
-		raise e
 	except Exception as e:
-		log(f"Unexpected Exception!")
-		log(repr(e))
-		cur.close()
-		con.close()
-		exit(1)
+		raise e
 
 
 def export_table_to_csv(con, table_name: str):
@@ -139,11 +133,10 @@ SELECT {select_columns} FROM {table_name}
 	except firebirdsql.OperationalError as e:
 		log(f"OperationalError: {str(e)}; skipping table")
 		return False
+	# ConnectionResetError, BrokenPipeError, ...
 	except Exception as e:
-		log(f"Unexpected Exception!")
-		log(repr(e))
-		con.close()
-		exit(1)
+		log(f"{repr(e)}; skipping table")
+		return False
 
 
 def export_table_to_csv_chunked(con, table_name: str, chunk_size: int, cont: int = 0):
@@ -250,10 +243,8 @@ SELECT COUNT(*) FROM {table_name}
 			log(f"OperationalError: {str(e)}; skipping table")
 			return False
 		except Exception as e:
-			log(f"Unexpected Exception!")
-			log(repr(e))
-			con.close()
-			exit(1)
+			log(f"{repr(e)}; skipping table")
+			return False
 	return True
 
 

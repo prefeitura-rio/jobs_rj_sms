@@ -23,14 +23,17 @@ celery_app = Celery(
 #############################
 
 @celery_app.task(name="dummy.task", bind=True)
-def dummy_task(self: Task):
+def dummy_task(self: Task, fail: bool):
 	logger.info("Dummy!")
+	if fail:
+		raise Exception("Requested task failure")
 	return { "success": True }
 
 
 @celery_app.task(name="export.task", bind=True)
 def export_task(self: Task, gcs_uri: str):
-	if not gcs_uri.startswith("gs://"):
+	gcs_uri = str(gcs_uri or "").strip()
+	if not gcs_uri or not gcs_uri.startswith("gs://"):
 		state = f"Malformed bucket URI: '{gcs_uri}'"
 		logger.warning(state)
 		raise utils.TaskFailure(state)
@@ -43,9 +46,21 @@ def export_task(self: Task, gcs_uri: str):
 	)
 	CSV_PATH = "/data/csv"
 
+	# Limpa qualquer arquivo que tenha sido deixado para trás
+	# em exportações (falhas) anteriores
+	ROOT_PATH = "/data"
+	for item in os.listdir(ROOT_PATH):
+		item_path = os.path.join(ROOT_PATH, item)
+		if os.path.isfile(item_path):
+			os.remove(item_path)
+		elif os.path.isdir(item_path):
+			shutil.rmtree(item_path)
+
 	# ex.: 'gs://bucket_name/path/to/my/file/BACKUP.GDB'
 	#      => [ 'bucket_name/path/to/my/file', 'BACKUP.GDB' ]
-	(gcs_full_path, gcs_filename) = gcs_uri[5:].rsplit("/", maxsplit=1)
+	(gcs_full_path, gcs_filename) = (
+		gcs_uri.removeprefix("gs://").rsplit("/", maxsplit=1)
+	)
 	# 'VERY.IMPORTANT.BACKUP.GDB' => 'VERY.IMPORTANT.BACKUP'
 	original_file_name = gcs_filename.rsplit(".", maxsplit=1)[0]
 	# => [ 'bucket_name', 'path/to/my/file' ]
@@ -78,7 +93,8 @@ def export_task(self: Task, gcs_uri: str):
 		})
 		logger.info(state)
 		EXPORT_SERVER = os.environ.get("EXPORT_SERVER")
-		requests.get(f"{EXPORT_SERVER}/export/{gdb_filename}")
+		resp = requests.get(f"{EXPORT_SERVER}/export/{gdb_filename}")
+		resp.raise_for_status()
 		logger.info(f"Found '{len(os.listdir(CSV_PATH))}' file(s) after export")
 
 
@@ -97,10 +113,7 @@ def export_task(self: Task, gcs_uri: str):
 
 		########################################
 		# (4) Faz upload para o bucket
-		compressed_file_ext = "unknown"
-		if zip_filepath.endswith(".zip"):
-			compressed_file_ext = "zip"
-		# ...
+		compressed_file_ext = "zip"
 		state = f"Uploading as 'gs://{bucket_name}/{gcs_path}/{original_file_name}.{compressed_file_ext}'..."
 		self.update_state(state="PROGRESS", meta={
 			"status": state,
@@ -126,7 +139,7 @@ def export_task(self: Task, gcs_uri: str):
 		})
 		logger.info(state)
 		shutil.rmtree(CSV_PATH)
-		os.remove(f"/data/{gdb_filename}")
+		os.remove(f"{ROOT_PATH}/{gdb_filename}")
 		os.remove(zip_filepath)
 
 		return { "success": True, "output": output_uri }

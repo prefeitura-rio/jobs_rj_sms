@@ -96,6 +96,8 @@ $ docker compose up gdb-export--celery_worker --build
 
 Você pode executar `poetry shell && poetry install --no-root` dentro da pasta `src/` do projeto que estiver desenvolvendo para que o VSCode coloque corzinha e ofereça autocomplete. Contudo, a execução ainda é via `docker compose up (...) --build`. Não é possível, no momento, testar 100% "localmente" – dependemos tanto do volume compartilhado entre containers, quanto da rede do docker para comunicação entre imagens. Provavelmente precisaria configurar profiles no docker compose, com portas expostas publicamente quando em dev; nos scripts, domínios em constantes condicionais (coisas como `EXPORT_DOMAIN = "localhost" if is_dev else "gdb2csv"`) para as requisições entre containers; .....
 
+**FIXME**:
+- `firebirdsql.OperationalError: Can not recv() packets` (parece só acontecer com algumas poucas tabelas do SIA?)
 
 **TODO**:
 - Permitir parâmetros de nomes de tabelas desejadas, charset, etc
